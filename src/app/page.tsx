@@ -1,26 +1,41 @@
 'use client'
 
-import Chatbox from "@/components/Chatbox"
 import Navbar from "@/components/Navbar"
 import QuizForm from "@/components/QuizForm"
-import { AI_MODELS } from "@/const"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { AI_MODELS, DIFFICULTY, QUESTION_PATTERNS } from "@/const"
 import { AIService } from "@/lib/aiService"
-import { AIModelType, ModelType, Question } from "@/types"
+import { AIModelType, ModelType, Question, QuestionDifficulty } from "@/types"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from 'react'
+import { toast } from "sonner"
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true)
-    const [prompt, setPrompt] = useState<string>('')
     const [generating, setGenerating] = useState<boolean>(false)
     const [questions, setQuestions] = useState<Question[] | null>(null)
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
     const [attempted, setAttempted] = useState<Set<string>>(new Set())
     const [percentage, setPercentage] = useState<number>(0.0)
     const [marks, setMarks] = useState<number>(0)
+    const [totalMarks, setTotalMarks] = useState<number>(0)
 
     const [aiModel, setAiModel] = useState<AIModelType[] | null>(null)
     const [selectedModel, setSelectedModel] = useState<ModelType | null>(null)
+
+    const [topic, setTopic] = useState<string>('')
+    const [difficulty, setDifficulty] = useState<QuestionDifficulty>('medium')
+    const [pattern, setPattern] = useState<string>('')
+    const [numQuestions, setNumQuestions] = useState<number>(10)
 
     const handleChangeAnswer = (questionId: string, answer: string) => {
         setQuestions(prevQuestions => {
@@ -39,12 +54,12 @@ export default function Home() {
         setIsSubmitting(true);
         try {
             if (!selectedModel) {
-                alert('Please select an AI model first.');
+                toast('Please select an AI model first.');
                 return;
             }
 
             if (!aiModel || !aiModel.length) {
-                alert('No AI models available. Please set up an AI model first.');
+                toast('No AI models available. Please set up an AI model first.');
                 return;
             }
 
@@ -54,11 +69,15 @@ export default function Home() {
 
             setQuestions(response.questions);
             setMarks(response.score);
-            setPercentage((response.score / response.totalQuestions) * 100);
+            setTotalMarks(response.totalMarks);
         } catch (error) {
             console.error('Error submitting quiz:', error);
         } finally {
             setIsSubmitting(false);
+            if (questions) {
+                setAttempted(new Set(questions.map(q => q.id)));
+                setPercentage(100);
+            }
         }
     }
 
@@ -96,23 +115,28 @@ export default function Home() {
     const submitPrompt = async () => {
         setGenerating(true);
         try {
-            if (!prompt.trim()) {
-                alert('Please enter a valid prompt.');
+            if (!topic || !topic.trim() || topic.length <= 5) {
+                toast('Please enter a precise topic for the quiz.');
+                return;
+            }
+
+            if (!pattern || !pattern.trim()) {
+                toast('Please select a valid question pattern.');
                 return;
             }
 
             if (!selectedModel) {
-                alert('Please select an AI model first.');
+                toast('Please select an AI model first.');
                 return;
             }
 
             if (!aiModel || !aiModel.length) {
-                alert('No AI models available. Please set up an AI model first.');
+                toast('No AI models available. Please set up an AI model first.');
                 return;
             }
 
             const aiService = new AIService(selectedModel as ModelType, aiModel.find(m => m.id === selectedModel)?.apiKey!, AI_MODELS.find(m => m.id === selectedModel)?.endpoint!);
-
+            const prompt = `Generate an ${difficulty} quiz about ${topic} with ${numQuestions} questions including ${pattern}.`;
             const response = await aiService.generateQuiz(prompt)
 
             setQuestions(response);
@@ -120,7 +144,11 @@ export default function Home() {
             console.error('Error submitting prompt:', error);
         } finally {
             setGenerating(false);
-            setPrompt('');
+            setTopic('');
+            setDifficulty('medium');
+            setPattern('');
+            setNumQuestions(10);
+            setIsSubmitting(false);
         }
     }
 
@@ -129,7 +157,6 @@ export default function Home() {
         setAttempted(new Set());
         setPercentage(0.0);
         setMarks(0);
-        setPrompt('');
         setIsSubmitting(false);
         setGenerating(false);
     }
@@ -147,114 +174,28 @@ export default function Home() {
         //     [
         //         {
         //             "id": "1",
-        //             "question": "Which of the following is a programming language?",
+        //             "question": "Which event is generally considered the start of World War II in Europe?",
         //             "type": "mcq",
-        //             "difficulty": "easy",
+        //             "difficulty": "medium",
         //             "marks": 1,
-        //             "options": ["HTML", "Python", "HTTP", "URL"],
-        //             "correctAnswer": "Python",
+        //             "options": [
+        //                 "The attack on Pearl Harbor",
+        //                 "The invasion of Poland by Germany",
+        //                 "The Battle of Britain",
+        //                 "The Fall of France"
+        //             ],
         //             "userAnswer": "",
         //             "explanation": ""
         //         },
         //         {
         //             "id": "2",
-        //             "question": "What does CPU stand for?",
+        //             "question": "Name the battle on the Eastern Front that is often considered a major turning point in World War II, marking the furthest advance of German forces into the Soviet Union.",
         //             "type": "saq",
-        //             "difficulty": "easy",
+        //             "difficulty": "medium",
         //             "marks": 1,
-        //             "options": [],
-        //             "correctAnswer": "",
         //             "userAnswer": "",
         //             "explanation": ""
         //         },
-        //         {
-        //             "id": "3",
-        //             "question": "Explain how the internet works in simple terms.",
-        //             "type": "long",
-        //             "difficulty": "easy",
-        //             "marks": 5,
-        //             "options": [],
-        //             "correctAnswer": "",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "4",
-        //             "question": "Which component is considered the 'brain' of the computer?",
-        //             "type": "mcq",
-        //             "difficulty": "easy",
-        //             "marks": 1,
-        //             "options": ["Monitor", "Keyboard", "CPU", "Hard Drive"],
-        //             "correctAnswer": "CPU",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "5",
-        //             "question": "Name one input device used in computers.",
-        //             "type": "saq",
-        //             "difficulty": "easy",
-        //             "marks": 1,
-        //             "options": [],
-        //             "correctAnswer": "",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "6",
-        //             "question": "Describe the function of an operating system.",
-        //             "type": "long",
-        //             "difficulty": "easy",
-        //             "marks": 5,
-        //             "options": [],
-        //             "correctAnswer": "",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "7",
-        //             "question": "Which of these is an example of an operating system?",
-        //             "type": "mcq",
-        //             "difficulty": "easy",
-        //             "marks": 1,
-        //             "options": ["Google", "Facebook", "Windows", "Intel"],
-        //             "correctAnswer": "Windows",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "8",
-        //             "question": "What is the full form of 'URL'?",
-        //             "type": "saq",
-        //             "difficulty": "easy",
-        //             "marks": 1,
-        //             "options": [],
-        //             "correctAnswer": "",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "9",
-        //             "question": "What does a web browser do?",
-        //             "type": "long",
-        //             "difficulty": "easy",
-        //             "marks": 5,
-        //             "options": [],
-        //             "correctAnswer": "",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         },
-        //         {
-        //             "id": "10",
-        //             "question": "Which of the following is used to store data permanently?",
-        //             "type": "mcq",
-        //             "difficulty": "easy",
-        //             "marks": 1,
-        //             "options": ["RAM", "ROM", "Cache", "Hard Disk"],
-        //             "correctAnswer": "Hard Disk",
-        //             "userAnswer": "",
-        //             "explanation": ""
-        //         }
         //     ]
         // )
     }, [setPercentage, setAiModel, setSelectedModel]);
@@ -263,74 +204,114 @@ export default function Home() {
         <main className="flex flex-col h-screen">
             <Navbar isAuthenticated={isAuthenticated} aiModel={aiModel} setAIModel={setAIModel} selectedModel={selectedModel} />
             {
-                generating ? <section className="container mx-auto py-8 flex justify-center items-center flex-1 min-h-0">
-                    <h1 className="text-xs font-bold text-gray-500 flex items-center gap-2">
-                        <span className="flex items-center gap-2">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                        </span>
-                        Please hold a moment. AI is generating your question paper based on your interest. Let the site do it jobs...
-                    </h1>
-                </section> : questions ? <QuizForm questions={questions} handleChangeAnswer={handleChangeAnswer} isSubmitting={isSubmitting} handleSubmit={handleSubmit} percentage={percentage} attempted={attempted.size} marks={marks} resetQuiz={resetQuiz} /> : <section className="text-white py-20 px-4 md:px-0 flex-1 flex w-full h-full items-center justify-center">
-                    <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center">
-                        <div className="md:w-1/2 mb-10 md:mb-0 px-4 md:px-10">
-                            <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-                                Welcome to <span className="text-yellow-300">QuizGen AI</span>!
-                            </h1>
-
-                            <p className="text-xl mb-8 opacity-90 leading-relaxed">
-                                Please enter your prompt to generate a quiz.<br />
-                                You can ask for any topic, and the AI will generate a quiz for you.
-                            </p>
+                questions ? <QuizForm questions={questions} handleChangeAnswer={handleChangeAnswer} isSubmitting={isSubmitting} handleSubmit={handleSubmit} percentage={percentage} attempted={attempted.size} marks={marks} resetQuiz={resetQuiz} totalMarks={totalMarks} /> : <section className="w-full h-full flex justify-center items-center px-6 md:px-16 lg:px-32 py-8">
+                    <div className="max-w-lg mx-auto rounded-lg form-shadow overflow-hidden gradient-bg">
+                        {/* Header Content */}
+                        <div className="px-8 pt-12 pb-6 text-center text-white bg-btn">
+                            <i className="fas fa-question-circle text-5xl mb-4 opacity-90"></i>
+                            <h1 className="text-3xl md:text-4xl font-bold">Question Generator</h1>
+                            <p className="mt-2 opacity-80">Create custom questions based on your preferences</p>
                         </div>
 
-                        <div className="md:w-1/2 px-4 md:px-10">
-                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-white/20">
-                                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                                    <i className="fas fa-lightbulb mr-3 text-yellow-300"></i>
-                                    Prompt Structure
-                                </h3>
+                        {/* Form Container */}
+                        <div className="dark:bg-gray-800 px-8 pb-8">
+                            <h2 className="text-2xl font-semibold text-center mb-6 pt-6">Let's get started!</h2>
 
-                                <div className="prompt-structure bg-white/5 rounded-lg p-4 mb-6">
-                                    <p className="text-sm font-mono text-white/90 mb-2">
-                                        "Suppose you are a quiz master and you have to generate a
-                                        <span className="bg-yellow-300/20 text-yellow-300 px-1.5 py-0.5 rounded">[difficulty]</span> level quiz about
-                                        <span className="bg-yellow-300/20 text-yellow-300 px-1.5 py-0.5 rounded">[enter precise topic]</span> with
-                                        <span className="bg-yellow-300/20 text-yellow-300 px-1.5 py-0.5 rounded">[count]</span> questions.
-                                    </p>
-                                    <p className="text-sm font-mono text-white/90">
-                                        Question types to include:
-                                        <span className="bg-yellow-300/20 text-yellow-300 px-1.5 py-0.5 rounded">[mcq, saq, long]</span>
-                                        [any one or more type of questions]"
-                                    </p>
+                            <form className="space-y-6">
+                                {/* Topic Field */}
+                                <div>
+                                    <Label htmlFor="topic" className="block text-sm font-medium mb-1">
+                                        Topic
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        id="topic"
+                                        name="topic"
+                                        placeholder="Please enter a precise topic for the quiz"
+                                        required
+                                        value={topic}
+                                        onChange={(e) => setTopic(e.target.value)}
+                                        className="w-full"
+                                    />
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="flex items-start">
-                                        <div className="flex-shrink-0 bg-blue-500/20 rounded-full p-2 mr-3">
-                                            <i className="fas fa-star text-blue-300"></i>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-medium">Be specific</h4>
-                                            <p className="text-sm opacity-80">The more details you provide, the better the quiz will be.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <div className="flex-shrink-0 bg-blue-500/20 rounded-full p-2 mr-3">
-                                            <i className="fas fa-clock text-blue-300"></i>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-medium">Examples work best</h4>
-                                            <p className="text-sm opacity-80">"Generate an intermediate quiz about World War 2 with 10 questions"</p>
-                                        </div>
-                                    </div>
+                                {/* Difficulty Level */}
+                                <div>
+                                    <Label htmlFor="difficulty" className="block text-sm font-medium mb-1">
+                                        Difficulty Level
+                                    </Label>
+                                    <Select name="difficulty" value={difficulty} onValueChange={(value) => setDifficulty(value as QuestionDifficulty)}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                                DIFFICULTY.map((difficulty) => (
+                                                    <SelectItem key={difficulty.id} value={difficulty.id}>
+                                                        {difficulty.name}
+                                                    </SelectItem>
+                                                ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            </div>
+
+                                {/* Question Pattern */}
+                                <div>
+                                    <Label htmlFor="pattern" className="block text-sm font-medium mb-1">
+                                        Question Pattern
+                                    </Label>
+                                    <Select name="pattern" value={pattern} onValueChange={(value) => setPattern(value)}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Pattern" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                                QUESTION_PATTERNS.map((pattern) => (
+                                                    <SelectItem key={pattern.id} value={pattern.id}>
+                                                        {pattern.name}
+                                                    </SelectItem>
+                                                ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Number of Questions */}
+                                <div>
+                                    <Label htmlFor="numQuestions" className="block text-sm font-medium mb-1">
+                                        Number of Questions
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        id="numQuestions"
+                                        name="numQuestions"
+                                        min="1"
+                                        max="50"
+                                        placeholder="Enter number of questions (1-50)"
+                                        required
+                                        value={numQuestions}
+                                        onChange={(e) => setNumQuestions(Number(e.target.value))}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                {/* Submit Button */}
+                                <div className="pt-4">
+                                    {
+                                        generating ? <Button className="w-full bg-btn hover:bg-btn-hover cursor-pointer" type="button" disabled>
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            Generating Questions...
+                                        </Button> : <Button className="w-full bg-btn hover:bg-btn-hover cursor-pointer" type="submit" onClick={submitPrompt} disabled={generating || isSubmitting}>
+                                            Generate Questions
+                                        </Button>
+                                    }
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </section>
             }
-            <Chatbox prompt={prompt} setPrompt={setPrompt} generating={generating} submitPrompt={submitPrompt} />
         </main>
     )
 }

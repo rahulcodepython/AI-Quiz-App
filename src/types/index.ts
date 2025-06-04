@@ -27,5 +27,5 @@ export type Quiz = Question[];
 export interface GradeResult {
     questions: Question[];
     score: number;
-    totalQuestions: number;
+    totalMarks: number;
 }
