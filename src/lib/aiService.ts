@@ -49,6 +49,7 @@ Points to be noted:
 - For MCQ: Always provide exactly 4 options with one correct answer
 - For SAQ: Provide expectedAnswer for reference
 - For Long: No expected answer of correctAnswer needed. Just provide the question.
+- Don't use any markdown formatting like code blocks or quotes or for any paragraphs.
 `;
     }
 
@@ -61,6 +62,10 @@ Points to be noted:
 - For wrong answers, explain why it's incorrect and what the right answer should be
 - Your response must only be a valid JSON object.
 - Your response must not contain any explanations or additional text outside the JSON object.
+- totalMarks should be the sum of all marks of questions.
+- The score should be the total marks scored by the user.
+- Don't use any markdown formatting like code blocks or quotes or for any paragraphs.
+- You have to write the explaination of the correct answer for both LAQ SAQ and MCQ.
 - The exact format which you have to follow is:
 interface Question {
     id: string;
@@ -75,7 +80,7 @@ interface Question {
 export interface GradingResult {
     questions: Question[];
     score: number;
-    totalQuestions: number;
+    totalMarks: number;
 }
 \`GradingResult\` this should be your return json format.
 The user given answer is:
@@ -89,6 +94,58 @@ IMPORTANT: Respond ONLY with valid JSON. Don't send any extra content along with
 
         try {
             const response = await this.callAI(finalPrompt);
+            //             const response = `
+            //             [
+            //   {
+            //     "id": "1",
+            //     "question": "What does 'IP' stand for in 'IP address'?",
+            //     "type": "mcq",
+            //     "difficulty": "easy",
+            //     "marks": 1,
+            //     "options": [
+            //       "Internet Protocol",
+            //       "Internal Program",
+            //       "Interconnected Process",
+            //       "Information Packet"
+            //     ],
+            //     "correctAnswer": "Internet Protocol",
+            //     "userAnswer": "",
+            //     "explanation": ""
+            //   },
+            //   {
+            //     "id": "2",
+            //     "question": "Which protocol is used to translate domain names (like www.google.com) into IP addresses?",
+            //     "type": "mcq",
+            //     "difficulty": "easy",
+            //     "marks": 1,
+            //     "options": [
+            //       "HTTP",
+            //       "FTP",
+            //       "DNS",
+            //       "SMTP"
+            //     ],
+            //     "correctAnswer": "DNS",
+            //     "userAnswer": "",
+            //     "explanation": ""
+            //   },
+            //   {
+            //     "id": "3",
+            //     "question": "What is the primary function of an IP address in a computer network?",
+            //     "type": "mcq",
+            //     "difficulty": "easy",
+            //     "marks": 1,
+            //     "options": [
+            //       "To display web pages",
+            //       "To uniquely identify a device on a network",
+            //       "To send email messages",
+            //       "To secure network connections"
+            //     ],
+            //     "correctAnswer": "To uniquely identify a device on a network",
+            //     "userAnswer": "",
+            //     "explanation": ""
+            //   }
+            // ]`
+            console.log('AI Quiz Response:', response);
             return this.parseQuizResponse(response);
         } catch (error) {
             console.error('AI Service Error:', error);
@@ -101,6 +158,58 @@ IMPORTANT: Respond ONLY with valid JSON. Don't send any extra content along with
 
         try {
             const response = await this.callAI(finalPrompt);
+            //             const response = `{
+            //     "questions": [
+            //         {
+            //             "id": "1",
+            //             "question": "What does 'IP' stand for in 'IP address'?",
+            //             "type": "mcq",
+            //             "difficulty": "easy",
+            //             "marks": 1,
+            //             "options": [
+            //                 "Internet Protocol",
+            //                 "Internal Program",
+            //                 "Interconnected Process",
+            //                 "Information Packet"
+            //             ],
+            //             "userAnswer": "Internet Protocol",
+            //             "explanation": "Your answer is correct. 'IP' in 'IP address' indeed stands for Internet Protocol, which is the set of rules governing the format of data sent over the internet or a local network."
+            //         },
+            //         {
+            //             "id": "2",
+            //             "question": "Which protocol is used to translate domain names (like www.google.com) into IP addresses?",
+            //             "type": "mcq",
+            //             "difficulty": "easy",
+            //             "marks": 1,
+            //             "options": [
+            //                 "HTTP",
+            //                 "FTP",
+            //                 "DNS",
+            //                 "SMTP"
+            //             ],
+            //             "userAnswer": "HTTP",
+            //             "explanation": "Your answer is incorrect. HTTP (Hypertext Transfer Protocol) is primarily used for transferring hypertext, like web pages, over the internet. The correct protocol for translating human-readable domain names into numerical IP addresses is DNS (Domain Name System). DNS acts like a phonebook for the internet."
+            //         },
+            //         {
+            //             "id": "3",
+            //             "question": "What is the primary function of an IP address in a computer network?",
+            //             "type": "mcq",
+            //             "difficulty": "easy",
+            //             "marks": 1,
+            //             "options": [
+            //                 "To display web pages",
+            //                 "To uniquely identify a device on a network",
+            //                 "To send email messages",
+            //                 "To secure network connections"
+            //             ],
+            //             "userAnswer": "To display web pages",
+            //             "explanation": "Your answer is incorrect. While devices with IP addresses do display web pages, the primary function of an IP address itself is not to display web pages. Its main purpose is to uniquely identify and locate a specific device (like a computer, server, or router) on a network, enabling data to be sent to and received from that device."
+            //         }
+            //     ],
+            //     "score": 1,
+            //     "totalMarks": 3
+            // }`;
+            console.log('AI Grading Response:', response);
             return this.parseGradeResponse(response);
         } catch (error) {
             console.error('AI Grading Error:', error);
@@ -244,18 +353,7 @@ IMPORTANT: Respond ONLY with valid JSON. Don't send any extra content along with
             const jsonString = codeBlockMatch ? codeBlockMatch[1] : rawResponse.trim();
 
             // Step 3: Parse the JSON
-            const parsed = JSON.parse(jsonString);
-
-            // Step 4: Basic validation (optional but recommended)
-            if (
-                typeof parsed !== 'object' ||
-                parsed === null ||
-                !('questions' in parsed) ||
-                !('score' in parsed) ||
-                !('totalQuestions' in parsed)
-            ) {
-                throw new Error("Parsed response is not a valid GradeResult object");
-            }
+            const parsed: GradeResult = JSON.parse(jsonString);
 
             return parsed as GradeResult;
         } catch (error) {

@@ -20,6 +20,7 @@ import { AIModelType, ModelType } from "@/types";
 import { Settings } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -33,6 +34,7 @@ const Navbar = ({ isAuthenticated, setAIModel, aiModel, selectedModel }: {
     const { theme, setTheme } = useTheme()
     const [model, setModel] = useState<ModelType | null>(null);
     const [apiKey, setApiKey] = useState<string>('');
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         if (selectedModel) {
@@ -54,7 +56,7 @@ const Navbar = ({ isAuthenticated, setAIModel, aiModel, selectedModel }: {
                 <h1 className="text-2xl font-bold">Quiz App</h1>
             </div>
             <div className="flex items-center gap-4">
-                <Drawer>
+                <Drawer open={isOpen} onOpenChange={setIsOpen}>
                     <DrawerTrigger asChild>
                         <Settings className="w-5 h-5 cursor-pointer" />
                     </DrawerTrigger>
@@ -95,7 +97,13 @@ const Navbar = ({ isAuthenticated, setAIModel, aiModel, selectedModel }: {
                                     <span className="">API Key</span>
                                     <Input placeholder="Enter your API key" className="w-full flex-1" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
                                 </div>
-                                <Button className="bg-btn hover:bg-btn-hover cursor-pointer w-full" onClick={() => model && apiKey.length > 0 && setAIModel(model, apiKey)}>
+                                <Button className="bg-btn hover:bg-btn-hover cursor-pointer w-full" onClick={() => {
+                                    if (model && apiKey.length > 0) {
+                                        setAIModel(model, apiKey)
+                                        toast("Settings saved successfully!")
+                                        setIsOpen(false);
+                                    }
+                                }}>
                                     Save
                                 </Button>
                             </div>

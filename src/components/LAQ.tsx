@@ -34,6 +34,12 @@ const LAQ = ({ question, handleChangeAnswer }: { question: Question, handleChang
                     <Textarea placeholder="Type your answer here..." className="w-full resize-none h-32" defaultValue={question.userAnswer} onChange={(e) => handleChangeAnswer(question.id, e.target.value)} />
                 }
             </div>
+
+            {
+                question.explanation && <span className="text-sm text-gray-500">
+                    Explaination: {question.explanation}
+                </span>
+            }
         </div>
     )
 }

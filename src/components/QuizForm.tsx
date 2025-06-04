@@ -5,7 +5,7 @@ import MCQ from "./MCQ";
 import SAQ from "./SAQ";
 import { Button } from "./ui/button";
 
-const QuizForm = ({ questions, handleChangeAnswer, isSubmitting, handleSubmit, percentage, attempted, marks, resetQuiz }: {
+const QuizForm = ({ questions, handleChangeAnswer, isSubmitting, handleSubmit, percentage, attempted, marks, resetQuiz, totalMarks }: {
     questions: Question[],
     handleChangeAnswer: (questionId: string, answer: string) => void
     isSubmitting: boolean
@@ -14,7 +14,15 @@ const QuizForm = ({ questions, handleChangeAnswer, isSubmitting, handleSubmit, p
     attempted: number
     marks: number
     resetQuiz: () => void
+    totalMarks: number
 }) => {
+    const divisionMarks = marks / totalMarks;
+    let calculatedPercentageMarks = 0;
+    if (isNaN(divisionMarks)) {
+        calculatedPercentageMarks = 0;
+    } else {
+        calculatedPercentageMarks = Math.round(divisionMarks * 100);
+    }
     return (
         <section className="container mx-auto flex flex-1 min-h-0 flex-col items-center w-full max-w-3xl h-full rounded-md mb-6">
             <div className="flex flex-col w-full bg-gray-50 dark:bg-gray-800">
@@ -62,7 +70,7 @@ const QuizForm = ({ questions, handleChangeAnswer, isSubmitting, handleSubmit, p
 
             <div className="p-4 w-full dark:bg-gray-800 rounded-b-md flex items-center justify-between">
                 <span className="text-sm text-gray-500 font-semibold">
-                    Marks: {marks} out of {questions.length}. Total {(marks / questions.length) * 100}%
+                    Marks: {marks} out of {totalMarks}. Total {calculatedPercentageMarks}%
                 </span>
                 <div>
                     <Button className="bg-red-500 hover:bg-red-600 cursor-pointer mr-2" onClick={resetQuiz} disabled={isSubmitting}>
@@ -71,7 +79,7 @@ const QuizForm = ({ questions, handleChangeAnswer, isSubmitting, handleSubmit, p
                     {
                         isSubmitting ? <Button className="bg-btn hover:bg-btn-hover cursor-pointer">
                             <span>
-                                <Loader2 className="animate-spin" size={16} />
+                                <Loader2 className="animate-spin w-4 h-4" />
                             </span>
                             <span>Loading ...</span>
                         </Button> : <Button className="bg-btn hover:bg-btn-hover cursor-pointer" onClick={handleSubmit} disabled={isSubmitting || attempted < questions.length}>
