@@ -111,45 +111,45 @@ IMPORTANT: Respond ONLY with valid JSON. Don't send any extra content along with
     private async callAI(prompt: string): Promise<Quiz | string> {
         const { model, token, endpoint } = this.config;
 
-        // OpenAI API call
-        if (model === 'openai') {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7,
-                    max_tokens: 2000,
-                }),
-            });
+        // // OpenAI API call
+        // if (model === 'openai') {
+        //     const response = await fetch(endpoint, {
+        //         method: 'POST',
+        //         headers: {
+        //             'Authorization': `Bearer ${token}`,
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify({
+        //             model: 'gpt-4',
+        //             messages: [{ role: 'user', content: prompt }],
+        //             temperature: 0.7,
+        //             max_tokens: 2000,
+        //         }),
+        //     });
 
-            const data = await response.json();
-            return data.choices[0].message.content as string;
-        }
+        //     const data = await response.json();
+        //     return data.choices[0].message.content as string;
+        // }
 
-        // Anthropic Claude API call
-        if (model === 'anthropic') {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': token,
-                    'Content-Type': 'application/json',
-                    'anthropic-version': '2023-06-01'
-                },
-                body: JSON.stringify({
-                    model: 'claude-3-sonnet-20240229',
-                    max_tokens: 2000,
-                    messages: [{ role: 'user', content: prompt }]
-                }),
-            });
+        // // Anthropic Claude API call
+        // if (model === 'anthropic') {
+        //     const response = await fetch(endpoint, {
+        //         method: 'POST',
+        //         headers: {
+        //             'x-api-key': token,
+        //             'Content-Type': 'application/json',
+        //             'anthropic-version': '2023-06-01'
+        //         },
+        //         body: JSON.stringify({
+        //             model: 'claude-3-sonnet-20240229',
+        //             max_tokens: 2000,
+        //             messages: [{ role: 'user', content: prompt }]
+        //         }),
+        //     });
 
-            const data = await response.json();
-            return data.content[0].text as string;
-        }
+        //     const data = await response.json();
+        //     return data.content[0].text as string;
+        // }
 
         // Gemini API call
         if (model === 'google') {
